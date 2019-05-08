@@ -5,8 +5,8 @@ import { auth } from "./index";
 import { join } from "path";
 import * as yargs from "yargs";
 import Tokenfile, { k_REFRESH_TOKEN } from "./lib/tokenfile";
-const DEFAULT_CONFIG_PATH = join(process.cwd(), ".betteradoauthrc");
-const DEFAULT_TOKENFILE_PATH = join(process.cwd(), ".betteradoauthtokens");
+const DEFAULT_CONFIG_PATH = join(process.cwd(), ".devopsauthrc");
+const DEFAULT_TOKENFILE_PATH = join(process.cwd(), ".devopsauthtoken");
 const input = require("input");
 
 interface IKeyValuePair {
