@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Config } from "./lib/config";
+import { Config, defaultConfig } from "./lib/config";
 import { auth } from "./index";
 import { join } from "path";
 import * as yargs from "yargs";
@@ -13,6 +13,10 @@ const input = require("input");
 interface IKeyValuePair {
   key: string;
   value: string;
+}
+
+function configInit(config: Config, _tokenfile: Tokenfile, _argv: IKeyValuePair) {
+  config.write(config.get());
 }
 
 function validateKey<T>(config: Config<T>, key: any): key is keyof T {
@@ -101,7 +105,7 @@ async function run(config: Config, tokenfile: Tokenfile, args: any) {
 
 function commandBuilder(cmd: (config: Config, tokenfile: Tokenfile, args: any) => void | Promise<void>): (args: any) => void {
   return async (args: any) => {
-    let config = new Config(args.configOverride || DEFAULT_CONFIG_PATH);
+    let config = new Config(args.configOverride || DEFAULT_CONFIG_PATH, defaultConfig);
     let tokenfilePath = args.tokenfile || config.get().tokenfile || DEFAULT_TOKENFILE_PATH;
     let tokenfile = new Tokenfile(tokenfilePath);
     let promise = cmd(config, tokenfile, args);
@@ -139,6 +143,11 @@ yargs
     describe: 'modify the config (run "config --help" for more info)',
     builder: (yargs: any) =>
       yargs
+        .command({
+          command: "init",
+          describe: "writes a default config",
+          handler: commandBuilder(configInit)
+        })
         .command({
           command: "set <key> <value>",
           describe: "Set a config variable",

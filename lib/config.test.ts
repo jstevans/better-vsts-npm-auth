@@ -1,7 +1,7 @@
 jest.mock("fs");
 jest.mock("path");
 
-import { Config, defaults } from "./config";
+import { Config, defaultConfig } from "./config";
 
 // mocked modules
 let fs = require("fs");
@@ -31,17 +31,17 @@ describe("The Config module", () => {
       expect(p).toEqual(configOverridePath);
     });
 
-    let config = new Config(configOverridePath);
+    let config = new Config(configOverridePath, defaultConfig);
     config.write({});
     expect.assertions(1);
   });
 
   describe("validates a given key", () => {
     describe("for a default config object", () => {
-      const config = new Config("");
+      const config = new Config("", defaultConfig);
 
       test("all valid keys are valid", () => {
-        for (const key of Object.keys(defaults)) {
+        for (const key of Object.keys(defaultConfig)) {
           expect(config.isKeyValid(key)).toBeTruthy();
         }
       });
@@ -53,7 +53,8 @@ describe("The Config module", () => {
 
     describe("for a custom config object", () => {
       const customKeys = ['foo', 'example', 'valid_key'];
-      const config = new Config("", customKeys);
+      const customConfig = Object.assign({}, ...customKeys.map(k => ({ [k]: null })));
+      const config = new Config("", customConfig);
 
       test("all valid keys are valid", () => {
         for (const key of customKeys) {
@@ -62,7 +63,7 @@ describe("The Config module", () => {
       });
 
       test("default keys aren't still valid", () => {
-        for (const key of Object.keys(defaults)) {
+        for (const key of Object.keys(defaultConfig)) {
           expect(config.isKeyValid(key)).toBeFalsy();
         }
       })
@@ -80,7 +81,7 @@ describe("The Config module", () => {
           throw { code: "ENOENT" };
         });
 
-        let config = (new Config("")).get();
+        let config = (new Config("", defaultConfig)).get();
 
         expect(config).toEqual(ini.parse(DEFAULT_CONFIG_CONTENTS));
       });
@@ -90,7 +91,7 @@ describe("The Config module", () => {
           return "clientId=foobar\r\n";
         });
 
-        let config = (new Config("")).get();
+        let config = (new Config("", defaultConfig)).get();
         expect(config.clientId).toEqual("foobar");
         expect(config.tokenExpiryGraceInMs).toEqual("1800000");
       });
@@ -101,7 +102,7 @@ describe("The Config module", () => {
         throw new Error("foobar");
       });
 
-      let config = new Config("");
+      let config = new Config("", defaultConfig);
 
       expect(() => {
         (config).get();
@@ -115,7 +116,7 @@ describe("The Config module", () => {
         throw e;
       });
 
-      let config = new Config("");
+      let config = new Config("", defaultConfig);
 
       expect(() => {
         config.get();
@@ -129,7 +130,7 @@ describe("The Config module", () => {
         expect(content).toContain("foo=bar");
       });
 
-      let config = new Config("");
+      let config = new Config("", defaultConfig);
 
       config.write({ foo: "bar" });
       expect(fs.writeFileSync).toHaveBeenCalledTimes(1);
@@ -141,7 +142,7 @@ describe("The Config module", () => {
         throw new Error("foobar");
       });
 
-      let config = new Config("");
+      let config = new Config("", defaultConfig);
 
       expect(() => {
         config.write({ foo: "bar" });
@@ -155,7 +156,7 @@ describe("The Config module", () => {
         expect(content).toHaveLength(0);
       });
 
-      let config = new Config("");
+      let config = new Config("", defaultConfig);
 
       config.clear();
       expect(fs.writeFileSync).toHaveBeenCalledTimes(1);
@@ -168,7 +169,7 @@ describe("The Config module", () => {
     const deleteKey = 'clientId';
     let mockConfigDictionary = { [deleteKey]: 'value' };
     beforeEach(() => {
-      config = new Config("", [deleteKey]);
+      config = new Config("", mockConfigDictionary);
       fs.writeFileSync.mockImplementation(() => { });
       fs.readFileSync.mockImplementation(() => JSON.stringify(mockConfigDictionary))
     });
@@ -203,7 +204,7 @@ describe("The Config module", () => {
     });
 
     test("and writes it to disk upon updating the value", () => {
-      let config = new Config("");
+      let config = new Config("", defaultConfig);
 
       config.set("clientId", "value");
       expect(fs.writeFileSync).toHaveBeenCalledTimes(1);
@@ -211,7 +212,7 @@ describe("The Config module", () => {
     });
 
     test("and ensures prior updates to the config are respected", () => {
-      let config = new Config("");
+      let config = new Config("", defaultConfig);
 
       config.set("redirectUri", "val1");
       expect(configContents.indexOf("redirectUri=val1") > -1).toBeTruthy();

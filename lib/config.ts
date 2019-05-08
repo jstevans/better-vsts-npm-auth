@@ -2,11 +2,12 @@ import { writeFileSync, readFileSync } from "fs";
 import { encode, parse } from "ini";
 
 
-export const defaults = {
+export const defaultConfig = {
   clientId: "DE516D90-B63E-4994-BA64-881EA988A9D2",
   redirectUri: "https://stateless-vsts-oauth.azurewebsites.net/oauth-callback",
   tokenEndpoint: "https://stateless-vsts-oauth.azurewebsites.net/token-refresh",
   tokenExpiryGraceInMs: "1800000",
+  tokenfile: ""
 };
 
 export interface IConfigDictionary {
@@ -17,6 +18,8 @@ export interface IConfigDictionary {
   tokenfile?: string;
 }
 
+type Optional<T> = { [key in keyof T]?: T[key] };
+
 /**
  * Represents the user configuration for better-vsts-npm-auth
  * and presents an interface for interactions with it.
@@ -24,13 +27,14 @@ export interface IConfigDictionary {
 export class Config<T extends any = IConfigDictionary> {
   constructor(
     private configPath: string,
-    private configKeys: (keyof T)[] = Object.keys(defaults)) { };
+    private defaultConfig: Optional<T>) {
+  };
 
   /**
    * Checks whether a key is valid for this config
    */
   isKeyValid(key: string | number | symbol): key is keyof T {
-    return this.configKeys.indexOf(key as any) != -1;
+    return Object.keys(this.defaultConfig).indexOf(key as any) != -1;
   }
 
   /**
@@ -94,6 +98,6 @@ export class Config<T extends any = IConfigDictionary> {
 
     let configObj = parse(configContents);
     // merge with defaults, with user specified config taking precedence
-    return Object.assign({}, defaults, configObj) as T;
+    return Object.assign({}, this.defaultConfig, configObj) as T;
   }
 }
