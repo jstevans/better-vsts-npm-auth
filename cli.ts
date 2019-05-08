@@ -77,9 +77,7 @@ async function tokenDeleter(_config: Config, tokenfile: Tokenfile): Promise<void
 
 async function run(config: Config, tokenfile: Tokenfile, args: any) {
   try {
-
-    auth(config, tokenfile, args);
-
+    await auth(config, tokenfile, args);
   } catch (e) {
 
     if (e.consentUrl) {
