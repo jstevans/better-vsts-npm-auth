@@ -1,6 +1,6 @@
 {
   "name": "devops-npm-auth",
-  "version": "5.0.0-alpha",
+  "version": "5.0.0-alpha-1",
   "description":
     "Platform agnostic library which provides a robust solution for maintaining credentials in your npmrc files",
   "main": "dist/index.js",
