@@ -5,6 +5,7 @@ import {
 } from "./vsts-auth-client";
 import { Registry } from "./npm";
 import { Config } from "./config";
+import Tokenfile from "./tokenfile";
 const k_VstfCollectionUri = "SYSTEM_TEAMFOUNDATIONCOLLECTIONURI";
 
 export interface IRegistryCollectionShards {
@@ -72,6 +73,7 @@ export function shardRegistriesByCollection(
 
 export async function authenticateRegistries(
   config: Config,
+  tokenfile: Tokenfile,
   ...registries: Array<Registry>
 ): Promise<Array<Registry>> {
   let registriesToAuthenticate = filterUniqueVstsRegistries(registries);
@@ -81,7 +83,7 @@ export async function authenticateRegistries(
   let labToken = getVstsLabOauthToken();
 
   if (!labToken) {
-    let userToken = await getUserAuthToken(config);
+    let userToken = await getUserAuthToken(config, tokenfile);
     registriesToAuthenticate.forEach(r => (r.token = userToken));
     return Promise.resolve(registriesToAuthenticate);
   } else {

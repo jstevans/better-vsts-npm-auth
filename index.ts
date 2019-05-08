@@ -2,6 +2,7 @@ import { Npmrc } from "./lib/npm";
 import { Config } from "./lib/config";
 import { authenticateRegistries } from "./lib/registry-auth-reducer";
 import { AuthorizationError } from "./lib/vsts-auth-client";
+import Tokenfile from "./lib/tokenfile";
 const uuid = require("uuid/v4");
 
 export { setRefreshToken } from "./lib/vsts-auth-client";
@@ -39,12 +40,12 @@ export interface IRunOptions {
 }
 
 class AuthError extends Error {
-    constructor(message: string, public consentUrl: string) { super(message) }
+  constructor(message: string, public consentUrl: string) { super(message) }
 }
 
-export async function run(config: Config, options: IRunOptions = {}) {
+export async function run(config: Config, tokenfile: Tokenfile, options: IRunOptions = {}) {
   try {
-    await auth(config, options);
+    await auth(config, tokenfile, options);
   } catch (e) {
     if (e.message) {
       console.log(e.message);
@@ -59,7 +60,7 @@ export async function run(config: Config, options: IRunOptions = {}) {
   }
 }
 
-export async function auth(config: Config, options: IRunOptions = {}) {
+export async function auth(config: Config, tokenfile: Tokenfile, options: IRunOptions = {}) {
   const configObj = config.get();
 
   try {
@@ -73,6 +74,7 @@ export async function auth(config: Config, options: IRunOptions = {}) {
 
     let authenticatedRegistries = await authenticateRegistries(
       config,
+      tokenfile,
       ...projectNpmrc.getRegistries(),
       ...userNpmrc.getRegistries()
     );
@@ -98,7 +100,7 @@ export async function auth(config: Config, options: IRunOptions = {}) {
         configObj.redirectUri
         }`;
 
-     let message = 
+      let message =
         "\n*****\n" +
         "We need user consent before this script can run.\n\n" +
         "Follow instructions in the browser window that just opened, or if a browser does not open,\n" +

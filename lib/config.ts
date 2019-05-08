@@ -7,7 +7,6 @@ export const defaults = {
   redirectUri: "https://stateless-vsts-oauth.azurewebsites.net/oauth-callback",
   tokenEndpoint: "https://stateless-vsts-oauth.azurewebsites.net/token-refresh",
   tokenExpiryGraceInMs: "1800000",
-  refresh_token: null as string
 };
 
 export interface IConfigDictionary {
@@ -15,10 +14,8 @@ export interface IConfigDictionary {
   redirectUri?: string;
   tokenEndpoint?: string;
   tokenExpiryGraceInMs?: string;
-  refresh_token?: string;
+  tokenfile?: string;
 }
-
-export type ConfigKey<T extends any> = keyof T;
 
 /**
  * Represents the user configuration for better-vsts-npm-auth
@@ -40,7 +37,7 @@ export class Config<T extends any = IConfigDictionary> {
    * Adds or updates the given setting and writes it
    * to the configuration file.
    */
-  set<K extends ConfigKey<T>>(key: K, val: T[K]) {
+  set<K extends keyof T>(key: K, val: T[K]) {
     let configObj = this.get();
 
     configObj[key] = val;
@@ -68,7 +65,7 @@ export class Config<T extends any = IConfigDictionary> {
   /**
    * Delete a key from the dictionary
    */
-  delete(key: ConfigKey<T>) {
+  delete(key: keyof T) {
     const configObj = this.get();
     delete configObj[key];
     this.write(configObj);

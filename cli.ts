@@ -2,10 +2,11 @@
 
 import { Config } from "./lib/config";
 import { run } from "./index";
-import { homedir } from "os";
 import { join } from "path";
 import * as yargs from "yargs";
-const DEFAULT_CONFIG_PATH = join(homedir(), ".vstsnpmauthrc");
+import Tokenfile, { k_REFRESH_TOKEN } from "./lib/tokenfile";
+const DEFAULT_CONFIG_PATH = join(process.cwd(), ".betteradoauthrc");
+const DEFAULT_TOKENFILE_PATH = join(process.cwd(), ".betteradoauthtokens");
 const input = require("input");
 
 interface IKeyValuePair {
@@ -20,11 +21,11 @@ function validateKey<T>(config: Config<T>, key: string): key is keyof T {
   return true;
 }
 
-function configSetter(config: Config, argv: IKeyValuePair) {
+function configSetter(config: Config, _tokenfile: Tokenfile, argv: IKeyValuePair) {
   validateKey(config, argv.key) && config.set(argv.key, argv.value);
 }
 
-function configGetter(config: Config, key: string) {
+function configGetter(config: Config, _tokenfile: Tokenfile, key: string) {
   if (key && validateKey(config, key)) {
     let configObj = config.get();
     let configEntry = configObj[key];
@@ -35,7 +36,7 @@ function configGetter(config: Config, key: string) {
   }
 }
 
-async function configDeleter(config: Config, key: string): Promise<void> {
+async function configDeleter(config: Config, _tokenfile: Tokenfile, key: string): Promise<void> {
   if (key && validateKey(config, key)) {
     let configObject = config.get();
     delete configObject[key];
@@ -51,10 +52,35 @@ async function configDeleter(config: Config, key: string): Promise<void> {
   }
 }
 
-function commandBuilder(cmd: (config: Config, args: any) => void | Promise<void>): (args: any) => void {
+function tokenSetter(_config: Config, tokenfile: Tokenfile, value: string) {
+  tokenfile.set(k_REFRESH_TOKEN, value);
+}
+
+function tokenGetter(_config: Config, tokenfile: Tokenfile) {
+  let configObj = tokenfile.get();
+  let configEntry = configObj[k_REFRESH_TOKEN];
+
+  if (configEntry) {
+    console.log(configEntry);
+  }
+}
+
+async function tokenDeleter(_config: Config, tokenfile: Tokenfile): Promise<void> {
+  // delete the whole config, once user confirms
+  let deleteConfig = await input.confrim(
+    "Are you sure you want to delete your config file?"
+  );
+  if (deleteConfig === true) {
+    tokenfile.clear();
+  }
+}
+
+function commandBuilder(cmd: (config: Config, tokenfile: Tokenfile, args: any) => void | Promise<void>): (args: any) => void {
   return async (args: any) => {
     let config = new Config(args.configOverride || DEFAULT_CONFIG_PATH);
-    let promise = cmd(config, args);
+    let tokenfilePath = args.tokenfile || config.get().tokenfile || DEFAULT_TOKENFILE_PATH;
+    let tokenfile = new Tokenfile(tokenfilePath);
+    let promise = cmd(config, tokenfile, args);
     if (promise) {
       await promise;
     }
@@ -106,6 +132,29 @@ yargs
           handler: commandBuilder(configDeleter)
         }),
     handler: commandBuilder(configGetter)
+  })
+  .command({
+    command: "token [command]",
+    describe: 'modify the config (run "token --help" for more info)',
+    builder: (yargs: any) =>
+      yargs
+        .command({
+          command: "set [value]",
+          describe: "Set the token",
+          handler: commandBuilder(tokenSetter)
+        })
+        .command({
+          command: "get",
+          describe: "Get the token",
+          handler: commandBuilder(tokenGetter)
+        })
+        .command({
+          command: "delete",
+          describe:
+            "Clear the token file.",
+          handler: commandBuilder(tokenDeleter)
+        }),
+    handler: commandBuilder(tokenGetter)
   })
   .command({
     command: "$0",

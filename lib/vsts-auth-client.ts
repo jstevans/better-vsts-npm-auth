@@ -3,8 +3,8 @@ import { decode } from "jsonwebtoken";
 import { Config } from "./config";
 import fetch from "node-fetch";
 import * as querystring from 'querystring';
+import Tokenfile, { k_REFRESH_TOKEN } from "./tokenfile";
 
-const k_REFRESH_TOKEN = "refresh_token";
 
 const ONE_SECOND_IN_MS = 1000;
 
@@ -26,20 +26,21 @@ export function isVstsFeedUrl(url: string): boolean {
   return url.indexOf("pkgs.visualstudio.com/_packaging") > -1;
 }
 
-export function setRefreshToken(config: Config, token: string) {
-  config.set(k_REFRESH_TOKEN, token);
+export function setRefreshToken(tokenfile: Tokenfile, token: string) {
+  tokenfile.set(k_REFRESH_TOKEN, token);
 }
 
-export async function getUserAuthToken(config: Config): Promise<string> {
+export async function getUserAuthToken(config: Config, tokenfile: Tokenfile): Promise<string> {
   let configObj = config.get();
+  let tokenObj = tokenfile.get();
   // validate config
   if (!configObj || !configObj.tokenEndpoint) {
-    return Promise.reject(new Error("invalid config, missing tokenEndpoint"));
-  } else if (!configObj[k_REFRESH_TOKEN]) {
-    return Promise.reject(new AuthorizationError("missing " + k_REFRESH_TOKEN));
+    throw new Error("invalid config, missing tokenEndpoint");
+  } else if (!tokenObj[k_REFRESH_TOKEN]) {
+    throw new AuthorizationError("missing " + k_REFRESH_TOKEN);
   }
 
-  const response = await fetch(`${configObj.tokenEndpoint}?${querystring.stringify({ code: configObj[k_REFRESH_TOKEN] })}`, {
+  const response = await fetch(`${configObj.tokenEndpoint}?${querystring.stringify({ code: tokenObj[k_REFRESH_TOKEN] })}`, {
     method: 'POST'
   });
 
@@ -50,7 +51,7 @@ export async function getUserAuthToken(config: Config): Promise<string> {
   }
 
   // stash the refresh_token
-  config.set(k_REFRESH_TOKEN, body[k_REFRESH_TOKEN]);
+  tokenfile.set(k_REFRESH_TOKEN, body[k_REFRESH_TOKEN]);
   const accessToken = body.access_token;
 
   // VSTS auth service doesn't accomodate clock skew well

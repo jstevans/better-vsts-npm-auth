@@ -17,7 +17,6 @@ describe("The Config module", () => {
   const DEFAULT_CONFIG_CONTENTS =
     "clientId=DE516D90-B63E-4994-BA64-881EA988A9D2\r\n" +
     "redirectUri=https://stateless-vsts-oauth.azurewebsites.net/oauth-callback\r\n" +
-    "refresh_token=null\r\n" +
     "tokenEndpoint=https://stateless-vsts-oauth.azurewebsites.net/token-refresh\r\n" +
     "tokenExpiryGraceInMs=1800000";
 
