@@ -30,7 +30,8 @@ function configSetter(config: Config, _tokenfile: Tokenfile, argv: IKeyValuePair
   validateKey(config, argv.key) && config.set(argv.key, argv.value);
 }
 
-function configGetter(config: Config, _tokenfile: Tokenfile, key: string) {
+function configGetter(config: Config, _tokenfile: Tokenfile, args: any) {
+  const { key } = args;
   if (key && validateKey(config, key)) {
     let configObj = config.get();
     let configEntry = configObj[key];
@@ -41,7 +42,8 @@ function configGetter(config: Config, _tokenfile: Tokenfile, key: string) {
   }
 }
 
-async function configDeleter(config: Config, _tokenfile: Tokenfile, key: string): Promise<void> {
+async function configDeleter(config: Config, _tokenfile: Tokenfile, args: any): Promise<void> {
+  const { key } = args;
   if (key && validateKey(config, key)) {
     let configObject = config.get();
     delete configObject[key];
@@ -57,8 +59,8 @@ async function configDeleter(config: Config, _tokenfile: Tokenfile, key: string)
   }
 }
 
-function tokenSetter(_config: Config, tokenfile: Tokenfile, value: string) {
-  tokenfile.set(k_REFRESH_TOKEN, value);
+function tokenSetter(_config: Config, tokenfile: Tokenfile, args: any) {
+  tokenfile.set(k_REFRESH_TOKEN, args.value);
 }
 
 function tokenGetter(_config: Config, tokenfile: Tokenfile) {
@@ -172,7 +174,7 @@ yargs
     builder: (yargs: any) =>
       yargs
         .command({
-          command: "set [value]",
+          command: "set <value>",
           describe: "Set the token",
           handler: commandBuilder(tokenSetter)
         })
