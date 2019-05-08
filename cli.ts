@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Config } from "./lib/config";
-import { run } from "./index";
+import { auth } from "./index";
 import { join } from "path";
 import * as yargs from "yargs";
 import Tokenfile, { k_REFRESH_TOKEN } from "./lib/tokenfile";
@@ -73,6 +73,31 @@ async function tokenDeleter(_config: Config, tokenfile: Tokenfile): Promise<void
   if (deleteConfig === true) {
     tokenfile.clear();
   }
+}
+
+async function run(config: Config, tokenfile: Tokenfile, args: any) {
+  try {
+
+    auth(config, tokenfile, args);
+
+  } catch (e) {
+
+    if (e.consentUrl) {
+      require('opn')(e.consentUrl);
+      delete e['consentUrl'];
+    }
+
+    if (e.message) {
+      console.error(e.message);
+    }
+
+    if (args.stack === true) {
+      throw e;
+    }
+
+    process.exit(1);
+  }
+
 }
 
 function commandBuilder(cmd: (config: Config, tokenfile: Tokenfile, args: any) => void | Promise<void>): (args: any) => void {

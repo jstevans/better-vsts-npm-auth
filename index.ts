@@ -43,23 +43,6 @@ class AuthError extends Error {
   constructor(message: string, public consentUrl: string) { super(message) }
 }
 
-export async function run(config: Config, tokenfile: Tokenfile, options: IRunOptions = {}) {
-  try {
-    await auth(config, tokenfile, options);
-  } catch (e) {
-    if (e.message) {
-      console.log(e.message);
-    }
-
-    // no matter what, we error out here
-    if (options.stack === true) {
-      throw e;
-    } else {
-      process.exit(1);
-    }
-  }
-}
-
 export async function auth(config: Config, tokenfile: Tokenfile, options: IRunOptions = {}) {
   const configObj = config.get();
 
