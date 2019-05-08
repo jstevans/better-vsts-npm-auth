@@ -5,6 +5,7 @@ import { auth } from "./index";
 import { join } from "path";
 import * as yargs from "yargs";
 import Tokenfile, { k_REFRESH_TOKEN } from "./lib/tokenfile";
+import * as open from "open";
 const DEFAULT_CONFIG_PATH = join(process.cwd(), ".devopsauthrc");
 const DEFAULT_TOKENFILE_PATH = join(process.cwd(), ".devopsauthtoken");
 const input = require("input");
@@ -14,7 +15,7 @@ interface IKeyValuePair {
   value: string;
 }
 
-function validateKey<T>(config: Config<T>, key: string): key is keyof T {
+function validateKey<T>(config: Config<T>, key: any): key is keyof T {
   if (!config.isKeyValid(key)) {
     throw new Error(`can't set "${key}" on config: "${key}" is not a valid config setting.`);
   }
@@ -81,7 +82,7 @@ async function run(config: Config, tokenfile: Tokenfile, args: any) {
   } catch (e) {
 
     if (e.consentUrl) {
-      require('opn')(e.consentUrl);
+      open(e.consentUrl);
       delete e['consentUrl'];
     }
 
