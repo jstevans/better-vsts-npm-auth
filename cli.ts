@@ -13,12 +13,19 @@ interface IKeyValuePair {
   value: string;
 }
 
+function validateKey<T>(config: Config<T>, key: string): key is keyof T {
+  if (!config.isKeyValid(key)) {
+    throw new Error(`can't set "${key}" on config: "${key}" is not a valid config setting.`);
+  }
+  return true;
+}
+
 function configSetter(config: Config, argv: IKeyValuePair) {
-  config.set(argv.key, argv.value);
+  validateKey(config, argv.key) && config.set(argv.key, argv.value);
 }
 
 function configGetter(config: Config, key: string) {
-  if (key) {
+  if (key && validateKey(config, key)) {
     let configObj = config.get();
     let configEntry = configObj[key];
 
@@ -29,7 +36,7 @@ function configGetter(config: Config, key: string) {
 }
 
 async function configDeleter(config: Config, key: string): Promise<void> {
-  if (key) {
+  if (key && validateKey(config, key)) {
     let configObject = config.get();
     delete configObject[key];
     config.write(configObject);
@@ -48,8 +55,8 @@ function commandBuilder(cmd: (config: Config, args: any) => void | Promise<void>
   return async (args: any) => {
     let config = new Config(args.configOverride || DEFAULT_CONFIG_PATH);
     let promise = cmd(config, args);
-    if(promise) {
-       await promise;
+    if (promise) {
+      await promise;
     }
     process.exit(0);
   };

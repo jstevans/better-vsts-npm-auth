@@ -1,7 +1,7 @@
 jest.mock("fs");
 jest.mock("path");
 
-import { Config } from "./config";
+import { Config, defaults } from "./config";
 
 // mocked modules
 let fs = require("fs");
@@ -17,6 +17,7 @@ describe("The Config module", () => {
   const DEFAULT_CONFIG_CONTENTS =
     "clientId=DE516D90-B63E-4994-BA64-881EA988A9D2\r\n" +
     "redirectUri=https://stateless-vsts-oauth.azurewebsites.net/oauth-callback\r\n" +
+    "refresh_token=null\r\n" +
     "tokenEndpoint=https://stateless-vsts-oauth.azurewebsites.net/token-refresh\r\n" +
     "tokenExpiryGraceInMs=1800000";
 
@@ -35,6 +36,43 @@ describe("The Config module", () => {
     config.write({});
     expect.assertions(1);
   });
+
+  describe("validates a given key", () => {
+    describe("for a default config object", () => {
+      const config = new Config("");
+
+      test("all valid keys are valid", () => {
+        for (const key of Object.keys(defaults)) {
+          expect(config.isKeyValid(key)).toBeTruthy();
+        }
+      });
+
+      test("invalid keys are invalid", () => {
+        expect(config.isKeyValid("foo")).toBeFalsy();
+      })
+    })
+
+    describe("for a custom config object", () => {
+      const customKeys = ['foo', 'example', 'valid_key'];
+      const config = new Config("", customKeys);
+
+      test("all valid keys are valid", () => {
+        for (const key of customKeys) {
+          expect(config.isKeyValid(key)).toBeTruthy();
+        }
+      });
+
+      test("default keys aren't still valid", () => {
+        for (const key of Object.keys(defaults)) {
+          expect(config.isKeyValid(key)).toBeFalsy();
+        }
+      })
+
+      test("invalid keys are invalid", () => {
+        expect(config.isKeyValid("1nv4lid")).toBeFalsy();
+      })
+    })
+  })
 
   describe("reads the config", () => {
     describe("and applies default values", () => {
@@ -126,6 +164,30 @@ describe("The Config module", () => {
     })
   })
 
+  describe("deletes a key from the config", () => {
+    let config: Config = null;
+    const deleteKey = 'clientId';
+    let mockConfigDictionary = { [deleteKey]: 'value' };
+    beforeEach(() => {
+      config = new Config("", [deleteKey]);
+      fs.writeFileSync.mockImplementation(() => { });
+      fs.readFileSync.mockImplementation(() => JSON.stringify(mockConfigDictionary))
+    });
+
+    test("gets from disk", () => {
+      config.delete(deleteKey);
+      expect(fs.readFileSync).toHaveBeenCalled();
+    })
+
+    test("writes to disk", () => {
+      fs.writeFileSync.mockImplementation((_path: string, content: string) =>
+        expect(JSON.stringify(content)).not.toHaveProperty(deleteKey)
+      )
+
+      config.delete(deleteKey);
+    });
+  })
+
   describe("sets the config", () => {
     let configContents = "";
 
@@ -144,21 +206,21 @@ describe("The Config module", () => {
     test("and writes it to disk upon updating the value", () => {
       let config = new Config("");
 
-      config.set("some", "value");
+      config.set("clientId", "value");
       expect(fs.writeFileSync).toHaveBeenCalledTimes(1);
-      expect(configContents.indexOf("some=value") > -1).toBeTruthy();
+      expect(configContents.indexOf("clientId=value") > -1).toBeTruthy();
     });
 
     test("and ensures prior updates to the config are respected", () => {
       let config = new Config("");
 
-      config.set("key1", "val1");
-      expect(configContents.indexOf("key1=val1") > -1).toBeTruthy();
-      expect(configContents.indexOf("key2=val2") > -1).toBeFalsy();
+      config.set("redirectUri", "val1");
+      expect(configContents.indexOf("redirectUri=val1") > -1).toBeTruthy();
+      expect(configContents.indexOf("tokenEndpoint=val2") > -1).toBeFalsy();
 
-      config.set("key2", "val2");
-      expect(configContents.indexOf("key1=val1") > -1).toBeTruthy();
-      expect(configContents.indexOf("key2=val2") > -1).toBeTruthy();
+      config.set("tokenEndpoint", "val2");
+      expect(configContents.indexOf("redirectUri=val1") > -1).toBeTruthy();
+      expect(configContents.indexOf("tokenEndpoint=val2") > -1).toBeTruthy();
 
       expect(fs.writeFileSync).toHaveBeenCalledTimes(2);
     });

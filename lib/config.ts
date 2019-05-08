@@ -2,29 +2,45 @@ import { writeFileSync, readFileSync } from "fs";
 import { encode, parse } from "ini";
 
 
-const defaults = {
+export const defaults = {
   clientId: "DE516D90-B63E-4994-BA64-881EA988A9D2",
   redirectUri: "https://stateless-vsts-oauth.azurewebsites.net/oauth-callback",
   tokenEndpoint: "https://stateless-vsts-oauth.azurewebsites.net/token-refresh",
-  tokenExpiryGraceInMs: "1800000"
+  tokenExpiryGraceInMs: "1800000",
+  refresh_token: null as string
 };
 
 export interface IConfigDictionary {
-  [key: string]: string;
+  clientId?: string;
+  redirectUri?: string;
+  tokenEndpoint?: string;
+  tokenExpiryGraceInMs?: string;
+  refresh_token?: string;
 }
+
+export type ConfigKey<T extends any> = keyof T;
 
 /**
  * Represents the user configuration for better-vsts-npm-auth
  * and presents an interface for interactions with it.
  */
-export class Config {
-  constructor(private configPath: string) { };
+export class Config<T extends any = IConfigDictionary> {
+  constructor(
+    private configPath: string,
+    private configKeys: (keyof T)[] = Object.keys(defaults)) { };
+
+  /**
+   * Checks whether a key is valid for this config
+   */
+  isKeyValid(key: string | number | symbol): key is keyof T {
+    return this.configKeys.indexOf(key as any) != -1;
+  }
 
   /**
    * Adds or updates the given setting and writes it
    * to the configuration file.
    */
-  set(key: string, val: string) {
+  set<K extends ConfigKey<T>>(key: K, val: T[K]) {
     let configObj = this.get();
 
     configObj[key] = val;
@@ -36,7 +52,7 @@ export class Config {
    * Forces a write of the given object to the
    * configuration file.
    */
-  write(obj: IConfigDictionary) {
+  write(obj: T | {}) {
     let configContents = encode(obj);
     writeFileSync(this.configPath, configContents);
   }
@@ -50,10 +66,19 @@ export class Config {
   }
 
   /**
+   * Delete a key from the dictionary
+   */
+  delete(key: ConfigKey<T>) {
+    const configObj = this.get();
+    delete configObj[key];
+    this.write(configObj);
+  }
+
+  /**
    * Reads the configuration file from disk and
    * returns the parsed config object.
    */
-  get(): IConfigDictionary {
+  get(): T {
     let configContents = "";
 
     try {
@@ -72,6 +97,6 @@ export class Config {
 
     let configObj = parse(configContents);
     // merge with defaults, with user specified config taking precedence
-    return Object.assign({}, defaults, configObj) as IConfigDictionary;
+    return Object.assign({}, defaults, configObj) as T;
   }
 }
