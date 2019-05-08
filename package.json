@@ -1,5 +1,5 @@
 {
-  "name": "better-vsts-npm-auth",
+  "name": "devops-npm-auth",
   "version": "4.1.7",
   "description":
     "Platform agnostic library which provides a robust solution for maintaining credentials in your npmrc files",
@@ -11,7 +11,7 @@
   },
   "files": ["dist"],
   "bin": {
-    "better-vsts-npm-auth": "dist/cli.js"
+    "devops-npm-auth": "dist/cli.js"
   },
   "scripts": {
     "ci": "yarn run build && yarn run test:ci",
@@ -23,8 +23,8 @@
     "prettier:autofix": "prettier --write *.{js,json,md}",
     "prettier:ci": "prettier -l *.{js,json,md}"
   },
-  "repository": "https://github.com/zumwald/better-vsts-npm-auth.git",
-  "author": "Daniel Zumwalt <daniel.zumwalt@moutlook.com>",
+  "repository": "https://github.com/jstevans/devops-npm-auth.git",
+  "author": "John Stevans <jstevans@users.noreply.github.com>",
   "license": "MIT",
   "dependencies": {
     "ini": "^1.3.4",
