@@ -1,14 +1,14 @@
-# better-vsts-npm-auth
+# devops-npm-auth
 
-Platform agnostic library and acompanying oauth service enabling developers to easily obtain and use tokens for authorizing NPM feeds in VSTS
+A temporary fork of [`better-vsts-npm-auth`](https://github.com/zumwald/better-vsts-npm-auth) while some config-related changes are upstreamed.
 
 [![CircleCI](https://circleci.com/gh/zumwald/better-vsts-npm-auth/tree/master.svg?style=svg)](https://circleci.com/gh/zumwald/better-vsts-npm-auth/tree/master)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
 ## Installation
 
-While not necessary, _better-vsts-npm-auth_ was built to be used as a global module.
-`npm i -g better-vsts-npm-auth`
+While not necessary, _devops-npm-auth_ was built to be used as a global module.
+For long-term use, please `npm i -g devops-npm-auth`. To test, try `npx devops-npm-auth`.
 
 ## Usage
 
@@ -18,44 +18,23 @@ Best for ad-hoc cases. The CLI comes with fully descriptive help docs, you can r
 
 ### API
 
-Provided for direct integration with application-specific tooling. On my team, we use this in our [preinstall script](https://docs.npmjs.com/misc/scripts) for our project to harden our system against annoying token expirations needlessly breaking our development mojo.
+`index.ts` provides a relatively simple interface if you prefer a different CLI, or need to wrap this tool.
 
-Example:
 
-```
-const vstsAuth = require('better-vsts-npm-auth');
-const input = require('input');
+### Configuration
 
-vstsAuth.run()
-  .then(() => console.log('woohoo! No more annoying 401s'))
-  .catch(e => {
-      // we can catch AuthorizationError and prompt our users to
-      // authorize the Stateless VSTS NPM OAuth application
-      // (or your own application, if you specify an alternate
-      // clientId in your config, which you're welcome to do)
-      if (vstsAuth.isAuthorizationError(e)){
-          // fail if we're running in a lab
-          if (process.env['BUILD_BUILDID'] || process.env['RELEASE_RELEASEID']){
-              return Promise.reject(e);
-          }
+`better-vsts-npm-auth` (and thus `devops-npm-auth`) stores its config in INI format. 
 
-          // wait for user input if we're running on a dev box
-          // note - I like the input package, but feel free to get your user
-          // input however you'd like
-          return input.text('paste your refresh_token:').
-            then(token => {
-                vstsAuth.setRefreshToken(token);
+#### OAuth client service
+In order to retrieve NPM tokens without leaving user credentials lying around on the machine, `better-vsts-npm-auth` uses Azure DevOps' OAuth flow ([documented here](https://docs.microsoft.com/en-us/vsts/integrate/get-started/authentication/oauth)), which requires an internet-facing service to complete token exchanges on the user's behalf. While you're welcome to use an existing service if you have one or build your own if you're so inclined, the author of `better-vsts-npm-auth` also publishes [`stateless-vsts-oauth`](https://github.com/zumwald/stateless-vsts-oauth) and hosts a public reference endpoint at https://stateless-vsts-oauth.azurewebsites.net, which this tool uses by default.
 
-                // not necessary, but nifty if you want to create a
-                // seamless local dev startup experience by re-running
-                return vstsAuth.run();
-            })
-      }});
-```
+* `redirectUri` and `tokenEndpoint` are URLs of the OAuth client service, which is used to retrieve new NPM tokens. `redirectUri` is the URL that DevOps should redirect to after a user grants permission to the OAuth client service. `tokenEndpoint` is the URL that `devops-npm-auth` should send requests for to refresh its NPM token.
+* `clientId` is the App ID of the OAuth client service, and is used (along with` redirectUri`) when forming the URL for new users to grant permissions to the OAuth client service.
 
-## Dependency on [stateless-vsts-oauth](https://github.com/zumwald/stateless-vsts-oauth)
+#### Local/user config
+Once the user's token is retrieved, it must be stored somewhere. Since this tool is used for authentication to private registries, by default it stores the tokens generated for a given repo in a `.betteradoauthtokens` "tokenfile" at the root of that repo.
 
-VSTS's OAuth flow is documented [here](https://docs.microsoft.com/en-us/vsts/integrate/get-started/authentication/oauth). It requires an internet-facing service to complete the token exchanges. While you're welcome to use an existing service if you have one or build your own if you're so inclined, you can also use this service as-is. It's hosted at https://stateless-vsts-oauth.azurewebsites.net.
+* `tokenfile` allows for a repo to specify an absolute or relative path that should be used for the tokenfile, instead.
 
 ## Prior art
 
