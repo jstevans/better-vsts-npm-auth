@@ -2,9 +2,6 @@
 
 A temporary fork of [`better-vsts-npm-auth`](https://github.com/zumwald/better-vsts-npm-auth) while some config-related changes are upstreamed.
 
-[![CircleCI](https://circleci.com/gh/zumwald/better-vsts-npm-auth/tree/master.svg?style=svg)](https://circleci.com/gh/zumwald/better-vsts-npm-auth/tree/master)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
-
 ## Installation
 
 While not necessary, _devops-npm-auth_ was built to be used as a global module.
